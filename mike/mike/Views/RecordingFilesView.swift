@@ -63,10 +63,10 @@ struct RecordingFilesView: View {
     
     private func setupAudioSession() {
         do {
-            // Use .playback category only when needed, and deactivate when leaving
+            // Use .playback category for pure audio playback
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
             try AVAudioSession.sharedInstance().setActive(true)
-            print("RecordingFilesView: Audio session configured for playback")
+            print("RecordingFilesView: Audio session configured for .playback")
         } catch {
             print("RecordingFilesView: Failed to configure audio session: \(error)")
         }
@@ -264,57 +264,104 @@ struct RecordingFilesView: View {
     // MARK: - Data Management
     
     private func deleteSegments(offsets: IndexSet) {
+        print("=== Deleting selected segments ===")
+        
+        var deletedFilesCount = 0
+        var deletedSegmentsCount = 0
+        
         for index in offsets {
             let segment = audioSegments[index]
             
             // Delete the actual audio file if it exists
             if let audioPath = segment.audioFilePath {
-                deleteAudioFile(at: audioPath)
+                if deleteAudioFile(at: audioPath) {
+                    deletedFilesCount += 1
+                }
             }
             
             // Delete the database record
             modelContext.delete(segment)
+            deletedSegmentsCount += 1
         }
         
         do {
             try modelContext.save()
-            print("Successfully deleted selected segments and audio files")
+            print("Successfully deleted \(deletedSegmentsCount) segments and \(deletedFilesCount) audio files")
         } catch {
             print("Failed to delete segments: \(error)")
         }
     }
     
     private func clearAllRecordings() {
-        // Delete both database records and actual audio files
-        for segment in audioSegments {
-            // Delete the actual audio file if it exists
-            if let audioPath = segment.audioFilePath {
-                deleteAudioFile(at: audioPath)
-            }
-            
-            // Delete the database record
-            modelContext.delete(segment)
+        print("=== Starting comprehensive audio cleanup ===")
+        
+        // First, get all audio files in Documents directory
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        var allAudioFiles: [URL] = []
+        
+        do {
+            let files = try FileManager.default.contentsOfDirectory(at: documentsPath, includingPropertiesForKeys: nil)
+            allAudioFiles = files.filter { $0.pathExtension.lowercased().contains("m4a") || $0.pathExtension.lowercased().contains("wav") }
+            print("Found \(allAudioFiles.count) audio files to clean up")
+        } catch {
+            print("Failed to scan Documents directory: \(error)")
         }
         
+        // Filter out files that might be in use (like temp files)
+        let filesToDelete = allAudioFiles.filter { file in
+            let fileName = file.lastPathComponent
+            // Don't delete files that might be in use
+            return !fileName.contains("temp_") && !fileName.contains("recording_")
+        }
+        
+        print("Will delete \(filesToDelete.count) safe files (excluding potentially in-use files)")
+        
+        // Delete filtered audio files
+        var deletedFilesCount = 0
+        for audioFile in filesToDelete {
+            do {
+                try FileManager.default.removeItem(at: audioFile)
+                deletedFilesCount += 1
+                print("Deleted audio file: \(audioFile.lastPathComponent)")
+            } catch {
+                print("Failed to delete audio file \(audioFile.lastPathComponent): \(error)")
+            }
+        }
+        
+        // Delete database records
+        var deletedSegmentsCount = 0
+        for segment in audioSegments {
+            // Delete the database record
+            modelContext.delete(segment)
+            deletedSegmentsCount += 1
+        }
+        
+        // Save database changes
         do {
             try modelContext.save()
             print("Successfully cleared all recordings and audio files")
+            print("Deleted \(deletedFilesCount) audio files and \(deletedSegmentsCount) database records")
         } catch {
             print("Failed to clear all recordings: \(error)")
         }
+        
+        print("=== Comprehensive audio cleanup completed ===")
     }
     
-    private func deleteAudioFile(at path: String) {
+    private func deleteAudioFile(at path: String) -> Bool {
         // Convert string path to URL
         if let url = URL(string: path) {
             do {
                 try FileManager.default.removeItem(at: url)
                 print("Deleted audio file: \(url.lastPathComponent)")
+                return true
             } catch {
                 print("Failed to delete audio file at \(path): \(error)")
+                return false
             }
         } else {
             print("Invalid audio file path: \(path)")
+            return false
         }
     }
 }

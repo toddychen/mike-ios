@@ -7,90 +7,114 @@
 
 import SwiftUI
 import SwiftData
+import AVFoundation
 
-struct ContentView: View {
+struct RecordingView: View {
+    let game: Game
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \TextBlock.lastUpdateTime, order: .reverse) private var textBlocks: [TextBlock]
-    @StateObject private var continuousRecordingManager = ContinuousRecordingManager()
+    @StateObject private var continuousAudioManager = ContinuousAudioManager()
     
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
                 // Recording control area
                 VStack(spacing: 20) {
-                    Text("Mike")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(.primary)
+                    VStack(spacing: 8) {
+                        Text("Mike")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(.primary)
+                        
+                        Text(game.name)
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                        
+                        Text(game.gameId)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .fontDesign(.monospaced)
+                    }
                     
                     // Recording button - moved above status labels
                     Button(action: {
-                        continuousRecordingManager.toggleContinuousRecording()
+                        continuousAudioManager.toggleContinuousRecording()
                     }) {
                         HStack(spacing: 12) {
-                            Image(systemName: continuousRecordingManager.isContinuousRecording ? "stop.circle.fill" : "mic.circle.fill")
+                            Image(systemName: continuousAudioManager.isRecording ? "stop.circle.fill" : "mic.circle.fill")
                                 .font(.title2)
-                            Text(continuousRecordingManager.isContinuousRecording ? "Stop Recording" : "Start Continuous Recording")
+                            Text(continuousAudioManager.isRecording ? "Stop Recording" : "Start Continuous Recording")
                                 .font(.headline)
                         }
                         .foregroundColor(.white)
                         .padding(.horizontal, 24)
                         .padding(.vertical, 16)
-                        .background(continuousRecordingManager.isContinuousRecording ? Color.red : Color.blue)
+                        .background(continuousAudioManager.isRecording ? Color.red : Color.blue)
                         .cornerRadius(25)
                         .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
                     }
                     .frame(maxWidth: .infinity) // Make button take full width
-                    .scaleEffect(continuousRecordingManager.isContinuousRecording ? 1.05 : 1.0)
-                    .animation(.easeInOut(duration: 0.2), value: continuousRecordingManager.isContinuousRecording)
+                                            .scaleEffect(continuousAudioManager.isRecording ? 1.05 : 1.0)
+                        .animation(.easeInOut(duration: 0.2), value: continuousAudioManager.isRecording)
                     
                     // Recording status display - removed duplicate status label
                     VStack(spacing: 12) {
                         // Phase status
-                        if continuousRecordingManager.isContinuousRecording {
+                        if continuousAudioManager.isRecording {
                             VStack(spacing: 8) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "mic.fill")
-                                        .foregroundColor(.red)
-                                        .scaleEffect(1.2)
-                                    Text(continuousRecordingManager.currentPhase.description)
-                                        .font(.headline)
-                                        .foregroundColor(.red)
+                                // First row: Phase status (left aligned)
+                                HStack {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "mic.fill")
+                                            .foregroundColor(continuousAudioManager.currentPhase == .recording ? .red : .blue)
+                                            .scaleEffect(1.2)
+                                        Text(continuousAudioManager.currentPhase.description)
+                                            .font(.headline)
+                                            .foregroundColor(continuousAudioManager.currentPhase == .recording ? .red : .blue)
+                                    }
+                                    Spacer()
                                 }
                                 
-                                // Audio level indicator
-                                if continuousRecordingManager.isListening {
+                                // Second row: Audio level (left) and recording time (right)
+                                HStack {
+                                    // Left: Audio level (always visible)
                                     HStack(spacing: 6) {
                                         Image(systemName: "waveform")
                                             .foregroundColor(.green)
-                                        Text("Audio Level: \(String(format: "%.1f", continuousRecordingManager.audioLevel)) dB")
+                                        Text("\(String(format: "%.1f", continuousAudioManager.audioLevel)) dB")
                                             .font(.caption)
                                             .foregroundColor(.green)
                                     }
-                                }
-                                
-                                // Transcription status (moved below audio level)
-                                if continuousRecordingManager.transcriptionStatus != .idle {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "text.bubble")
-                                            .foregroundColor(.blue)
-                                        Text(continuousRecordingManager.transcriptionStatus.description)
-                                            .font(.subheadline)
-                                            .foregroundColor(.blue)
+                                    
+                                    Spacer()
+                                    
+                                    // Right: Recording time (only when recording)
+                                    if continuousAudioManager.currentPhase == .recording {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "clock")
+                                                .foregroundColor(.orange)
+                                            Text("\(String(format: "%.1f", continuousAudioManager.recordingTime))s")
+                                                .font(.caption)
+                                                .foregroundColor(.orange)
+                                        }
                                     }
                                 }
                                 
-                                // Recording time indicator
-                                if continuousRecordingManager.isRecording {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "clock")
-                                            .foregroundColor(.orange)
-                                        Text("Recording: \(String(format: "%.1f", continuousRecordingManager.recordingTime))s")
-                                            .font(.caption)
-                                            .foregroundColor(.orange)
+                                // Third row: Async transcription status (left aligned, different color)
+                                if continuousAudioManager.transcriptionStatus != .idle {
+                                    HStack {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "text.bubble")
+                                                .foregroundColor(.purple)
+                                            Text("Async: \(continuousAudioManager.transcriptionStatus.description)")
+                                                .font(.subheadline)
+                                                .foregroundColor(.purple)
+                                        }
+                                        Spacer()
                                     }
                                 }
                             }
+                            .padding(.horizontal, 16) // 增加左右边距
                             .padding(.vertical, 8)
                         }
                     }
@@ -138,8 +162,8 @@ struct ContentView: View {
                         .cornerRadius(16)
                         .shadow(color: .black.opacity(0.15), radius: 2, x: 0, y: 1)
                     }
-                    .disabled(continuousRecordingManager.isContinuousRecording)
-                    .opacity(continuousRecordingManager.isContinuousRecording ? 0.6 : 1.0)
+                    .disabled(continuousAudioManager.isRecording)
+                    .opacity(continuousAudioManager.isRecording ? 0.6 : 1.0)
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 16)
@@ -188,7 +212,15 @@ struct ContentView: View {
             .navigationBarHidden(true)
         }
         .onAppear {
-            continuousRecordingManager.setModelContext(modelContext)
+            // Setup audio session for recording when entering main page
+            do {
+                try AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .default)
+                print("ContentView: Audio session category set to .playAndRecord")
+            } catch {
+                print("ContentView: Failed to set audio session category: \(error)")
+            }
+            
+            continuousAudioManager.setModelContext(modelContext)
         }
     }
     
@@ -248,6 +280,6 @@ struct TextBlockView: View {
 }
 
 #Preview {
-    ContentView()
-        .modelContainer(for: [AudioSegment.self, TextBlock.self], inMemory: true)
+    RecordingView(game: Game(gameId: "nfl.g.20250823025", name: "NFL Game 1", date: Date()))
+        .modelContainer(for: [Game.self, AudioSegment.self, TextBlock.self], inMemory: true)
 }

@@ -12,6 +12,7 @@ import SwiftData
 struct mikeApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
+            Game.self,
             AudioSegment.self,
             TextBlock.self,
         ])
@@ -26,7 +27,7 @@ struct mikeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainView()
         }
         .modelContainer(sharedModelContainer)
     }
