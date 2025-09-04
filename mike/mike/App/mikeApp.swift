@@ -13,6 +13,7 @@ struct mikeApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Game.self,
+            GamePlay.self,
             AudioSegment.self,
             TextBlock.self,
         ])

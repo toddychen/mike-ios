@@ -16,6 +16,9 @@
 		DE22B6642E6823DD0022452F /* RecordingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE22B6632E6823DD0022452F /* RecordingView.swift */; };
 		DE22B6652E6823DD0022452F /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE22B6622E6823DD0022452F /* MainView.swift */; };
 		DE22B6672E6823EA0022452F /* Game.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE22B6662E6823EA0022452F /* Game.swift */; };
+		DE22B6692E6828430022452F /* GamePlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE22B6682E6828430022452F /* GamePlay.swift */; };
+		DE22B66B2E68284B0022452F /* GameDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE22B66A2E68284B0022452F /* GameDetailView.swift */; };
+		DE22B66D2E682D060022452F /* GamePlayAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE22B66C2E682D060022452F /* GamePlayAPI.swift */; };
 		DEE38D132E56F6980097C56B /* RecordingFilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEE38D122E56F6980097C56B /* RecordingFilesView.swift */; };
 		DEE38D1B2E5977860097C56B /* ContinuousAudioManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEE38D1A2E5977860097C56B /* ContinuousAudioManager.swift */; };
 /* End PBXBuildFile section */
@@ -51,6 +54,9 @@
 		DE22B6622E6823DD0022452F /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		DE22B6632E6823DD0022452F /* RecordingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingView.swift; sourceTree = "<group>"; };
 		DE22B6662E6823EA0022452F /* Game.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Game.swift; sourceTree = "<group>"; };
+		DE22B6682E6828430022452F /* GamePlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GamePlay.swift; sourceTree = "<group>"; };
+		DE22B66A2E68284B0022452F /* GameDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameDetailView.swift; sourceTree = "<group>"; };
+		DE22B66C2E682D060022452F /* GamePlayAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GamePlayAPI.swift; sourceTree = "<group>"; };
 		DEE38D122E56F6980097C56B /* RecordingFilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingFilesView.swift; sourceTree = "<group>"; };
 		DEE38D1A2E5977860097C56B /* ContinuousAudioManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContinuousAudioManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -133,6 +139,7 @@
 		DE1D19532E55C3540094414A /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				DE22B6682E6828430022452F /* GamePlay.swift */,
 				DE22B6662E6823EA0022452F /* Game.swift */,
 				DE1D19512E55C3540094414A /* AudioSegment.swift */,
 				DE1D19522E55C3540094414A /* TextBlock.swift */,
@@ -151,6 +158,7 @@
 		DE1D19572E55C3540094414A /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				DE22B66C2E682D060022452F /* GamePlayAPI.swift */,
 				DE1D19562E55C3540094414A /* TranscriptionService.swift */,
 			);
 			path = Services;
@@ -166,6 +174,7 @@
 		DE1D195A2E55C3540094414A /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				DE22B66A2E68284B0022452F /* GameDetailView.swift */,
 				DE22B6622E6823DD0022452F /* MainView.swift */,
 				DE22B6632E6823DD0022452F /* RecordingView.swift */,
 				DEE38D122E56F6980097C56B /* RecordingFilesView.swift */,
@@ -330,8 +339,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DE22B6692E6828430022452F /* GamePlay.swift in Sources */,
 				DE1D19612E55C3540094414A /* mikeApp.swift in Sources */,
+				DE22B66D2E682D060022452F /* GamePlayAPI.swift in Sources */,
 				DE22B6642E6823DD0022452F /* RecordingView.swift in Sources */,
+				DE22B66B2E68284B0022452F /* GameDetailView.swift in Sources */,
 				DE22B6652E6823DD0022452F /* MainView.swift in Sources */,
 				DE1D19622E55C3540094414A /* AudioRecorder.swift in Sources */,
 				DEE38D132E56F6980097C56B /* RecordingFilesView.swift in Sources */,

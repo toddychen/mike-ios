@@ -87,7 +87,7 @@ struct GameRowView: View {
     let game: Game
     
     var body: some View {
-        NavigationLink(destination: RecordingView(game: game)) {
+        NavigationLink(destination: GameDetailView(game: game)) {
             VStack(spacing: 12) {
                 // Top row: Game icon and status
                 HStack(spacing: 16) {
