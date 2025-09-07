@@ -19,6 +19,7 @@
 		DE22B6692E6828430022452F /* GamePlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE22B6682E6828430022452F /* GamePlay.swift */; };
 		DE22B66B2E68284B0022452F /* GameDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE22B66A2E68284B0022452F /* GameDetailView.swift */; };
 		DE22B66D2E682D060022452F /* GamePlayAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE22B66C2E682D060022452F /* GamePlayAPI.swift */; };
+		DE22B6712E6BAACF0022452F /* TextToSpeechService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE22B6702E6BAACF0022452F /* TextToSpeechService.swift */; };
 		DEE38D132E56F6980097C56B /* RecordingFilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEE38D122E56F6980097C56B /* RecordingFilesView.swift */; };
 		DEE38D1B2E5977860097C56B /* ContinuousAudioManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEE38D1A2E5977860097C56B /* ContinuousAudioManager.swift */; };
 /* End PBXBuildFile section */
@@ -57,6 +58,7 @@
 		DE22B6682E6828430022452F /* GamePlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GamePlay.swift; sourceTree = "<group>"; };
 		DE22B66A2E68284B0022452F /* GameDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameDetailView.swift; sourceTree = "<group>"; };
 		DE22B66C2E682D060022452F /* GamePlayAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GamePlayAPI.swift; sourceTree = "<group>"; };
+		DE22B6702E6BAACF0022452F /* TextToSpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextToSpeechService.swift; sourceTree = "<group>"; };
 		DEE38D122E56F6980097C56B /* RecordingFilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingFilesView.swift; sourceTree = "<group>"; };
 		DEE38D1A2E5977860097C56B /* ContinuousAudioManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContinuousAudioManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -158,6 +160,7 @@
 		DE1D19572E55C3540094414A /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				DE22B6702E6BAACF0022452F /* TextToSpeechService.swift */,
 				DE22B66C2E682D060022452F /* GamePlayAPI.swift */,
 				DE1D19562E55C3540094414A /* TranscriptionService.swift */,
 			);
@@ -352,6 +355,7 @@
 				DE1D19642E55C3540094414A /* TextBlock.swift in Sources */,
 				DE1D19652E55C3540094414A /* TranscriptionService.swift in Sources */,
 				DE1D19672E55C3540094414A /* AudioSegment.swift in Sources */,
+				DE22B6712E6BAACF0022452F /* TextToSpeechService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

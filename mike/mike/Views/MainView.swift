@@ -14,8 +14,9 @@ struct MainView: View {
     
     // Hardcoded games for now
     private let hardcodedGames = [
-        Game(gameId: "nfl.g.20250823025", name: "PreSeason: LA Chargers vs 49ers", date: Date(), isActive: true),
-        Game(gameId: "nfl.g.20250904021", name: "Week 1: Cowboys vs Eagles", date: Date().addingTimeInterval(86400), isActive: false)
+        Game(gameId: "nfl.g.20250823025", name: "PreSeason: LA Chargers vs 49ers", date: Date(), isActive: true, replay: true),
+        Game(gameId: "nfl.g.20250904021", name: "Week 1: Cowboys vs Eagles", date: Date().addingTimeInterval(86400), isActive: true, replay: true),
+        Game(gameId: "nfl.g.20250905024", name: "Week 1: Chiefs vs LA Chargers", date: Date().addingTimeInterval(172800), isActive: true, replay: false)
     ]
     
     var body: some View {
@@ -37,25 +38,13 @@ struct MainView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 30)
                 
-                // Games list
-                if games.isEmpty {
-                    // Show hardcoded games if no games in database
-                    VStack(spacing: 16) {
-                        ForEach(hardcodedGames, id: \.gameId) { game in
-                            GameRowView(game: game)
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 16) {
-                            ForEach(games, id: \.gameId) { game in
-                                GameRowView(game: game)
-                            }
-                        }
-                        .padding(.horizontal, 20)
+                // Games list - always show hardcoded games in order
+                VStack(spacing: 16) {
+                    ForEach(hardcodedGames, id: \.gameId) { game in
+                        GameRowView(game: game)
                     }
                 }
+                .padding(.horizontal, 20)
                 
                 Spacer()
             }

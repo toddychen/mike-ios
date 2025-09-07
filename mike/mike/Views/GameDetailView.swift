@@ -12,6 +12,7 @@ struct GameDetailView: View {
     let game: Game
     @Environment(\.modelContext) private var modelContext
     @StateObject private var gamePlayAPI = GamePlayAPI()
+    @StateObject private var ttsService = TextToSpeechService()
     @State private var isConvoEnabled = false
     @State private var secondsPerPlay = 20
     @State private var startTime = Date()
@@ -19,6 +20,10 @@ struct GameDetailView: View {
     @State private var replayInfo: ReplayInfo?
     @State private var showingError = false
     @State private var isRefreshPressed = false
+    @State private var hasSpokenFirstPlay = false
+    @State private var readConvoResponse = false // false = read details, true = read convoResponse
+    @State private var autoRefresh = false
+    @State private var refreshTimer: Timer?
     
     var body: some View {
         ScrollView {
@@ -37,6 +42,9 @@ struct GameDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             fetchGamePlays()
+        }
+        .onDisappear {
+            stopAutoRefresh()
         }
         .alert("Error", isPresented: $showingError) {
             Button("OK") { }
@@ -102,7 +110,7 @@ struct GameDetailView: View {
     }
     
     private var actionButtonsSection: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             HStack {
                 Text("Actions")
                     .font(.headline)
@@ -110,7 +118,7 @@ struct GameDetailView: View {
                 Spacer()
             }
             
-            HStack(spacing: 16) {
+            VStack(spacing: 8) {
                 // Refresh button
                 Button(action: {
                     withAnimation(.easeInOut(duration: 0.1)) {
@@ -125,19 +133,19 @@ struct GameDetailView: View {
                     
                     fetchGamePlays()
                 }) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         Image(systemName: "arrow.clockwise")
-                            .font(.title3)
+                            .font(.caption)
                             .foregroundColor(.white)
                         Text("Refresh")
-                            .font(.subheadline)
+                            .font(.caption)
                             .fontWeight(.medium)
                             .foregroundColor(.white)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, 8)
                     .background(isRefreshPressed ? Color.blue.opacity(0.7) : Color.blue)
-                    .cornerRadius(12)
+                    .cornerRadius(8)
                     .scaleEffect(isRefreshPressed ? 0.95 : 1.0)
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -145,17 +153,113 @@ struct GameDetailView: View {
                 // Enable Convo toggle
                 HStack(spacing: 8) {
                     Text("Enable Convo")
-                        .font(.subheadline)
+                        .font(.caption)
                         .fontWeight(.medium)
                         .foregroundColor(.primary)
                     
+                    Spacer()
+                    
                     Toggle("", isOn: $isConvoEnabled)
                         .toggleStyle(SwitchToggleStyle(tint: .green))
+                        .scaleEffect(0.8)
                 }
-                .padding(.vertical, 12)
-                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+                .padding(.horizontal, 12)
                 .background(Color(.systemGray6))
-                .cornerRadius(12)
+                .cornerRadius(8)
+                
+                // Auto Refresh toggle
+                HStack(spacing: 8) {
+                    Text("Auto Refresh")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                    
+                    Toggle("", isOn: $autoRefresh)
+                        .toggleStyle(SwitchToggleStyle(tint: .orange))
+                        .scaleEffect(0.8)
+                        .onChange(of: autoRefresh) { newValue in
+                            if newValue {
+                                startAutoRefresh()
+                            } else {
+                                stopAutoRefresh()
+                            }
+                        }
+                }
+                .padding(.vertical, 6)
+                .padding(.horizontal, 12)
+                .background(Color(.systemGray6))
+                .cornerRadius(8)
+                
+                // Voice reading field toggle
+                HStack(spacing: 8) {
+                    Text("Voice Reading:")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 12) {
+                        Button(action: {
+                            readConvoResponse = false
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: readConvoResponse ? "circle" : "checkmark.circle.fill")
+                                    .font(.caption2)
+                                    .foregroundColor(readConvoResponse ? .gray : .blue)
+                                Text("Details")
+                                    .font(.caption2)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(readConvoResponse ? .gray : .blue)
+                            }
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        Button(action: {
+                            readConvoResponse = true
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: readConvoResponse ? "checkmark.circle.fill" : "circle")
+                                    .font(.caption2)
+                                    .foregroundColor(readConvoResponse ? .blue : .gray)
+                                Text("AI Response")
+                                    .font(.caption2)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(readConvoResponse ? .blue : .gray)
+                            }
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                }
+                .padding(.vertical, 6)
+                .padding(.horizontal, 12)
+                .background(Color(.systemGray6))
+                .cornerRadius(8)
+                
+                // Stop speaking button (only show when speaking)
+                if ttsService.isSpeaking {
+                    Button(action: {
+                        ttsService.stopSpeaking()
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "stop.fill")
+                                .font(.caption)
+                                .foregroundColor(.white)
+                            Text("Stop Speaking")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(Color.red)
+                        .cornerRadius(8)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
             }
         }
         .padding()
@@ -186,6 +290,7 @@ struct GameDetailView: View {
                 
                 Spacer()
             }
+            
             
             // Start time controls
             VStack(spacing: 12) {
@@ -400,12 +505,19 @@ struct GameDetailView: View {
                     gameId: game.gameId,
                     secondsPerPlay: secondsPerPlay,
                     startTime: startTime,
-                    convoEnabled: isConvoEnabled
+                    convoEnabled: isConvoEnabled,
+                    isReplay: game.replay
                 )
                 
                 await MainActor.run {
                     self.gamePlays = response.plays
                     self.replayInfo = response.replayInfo
+                    
+                    // Auto-speak first play if available
+                    if !self.gamePlays.isEmpty {
+                        self.speakFirstPlay()
+                        self.hasSpokenFirstPlay = true
+                    }
                 }
             } catch {
                 await MainActor.run {
@@ -414,6 +526,47 @@ struct GameDetailView: View {
                 }
             }
         }
+    }
+    
+    private func speakFirstPlay() {
+        guard let firstPlay = gamePlays.first else { return }
+        
+        var textToSpeak = ""
+        
+        if readConvoResponse {
+            // Read convoResponse field
+            if let convoResponse = firstPlay.convoResponse,
+               !convoResponse.isEmpty && convoResponse != "[NO ACTION]" {
+                textToSpeak = convoResponse
+            }
+        } else {
+            // Read details field
+            let details = firstPlay.details.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !details.isEmpty {
+                textToSpeak = details
+            }
+        }
+        
+        if !textToSpeak.isEmpty {
+            ttsService.speak(textToSpeak)
+        }
+    }
+    
+    private func startAutoRefresh() {
+        stopAutoRefresh() // Stop any existing timer
+        
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 90.0, repeats: true) { _ in
+            print("Auto refresh triggered")
+            fetchGamePlays()
+        }
+        
+        print("Auto refresh started - will refresh every 90 seconds")
+    }
+    
+    private func stopAutoRefresh() {
+        refreshTimer?.invalidate()
+        refreshTimer = nil
+        print("Auto refresh stopped")
     }
 }
 

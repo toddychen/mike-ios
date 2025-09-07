@@ -17,7 +17,8 @@ class GamePlayAPI: ObservableObject {
         gameId: String,
         secondsPerPlay: Int,
         startTime: Date,
-        convoEnabled: Bool
+        convoEnabled: Bool,
+        isReplay: Bool = true
     ) async throws -> GamePlayAPIResponse {
         
         await MainActor.run {
@@ -36,8 +37,9 @@ class GamePlayAPI: ObservableObject {
         formatter.timeZone = TimeZone.current
         let startTimeString = formatter.string(from: startTime)
         
-        // Build URL with query parameters
-        guard var components = URLComponents(string: "\(baseURL)/api/game/\(gameId)/replay") else {
+        // Build URL with query parameters - choose endpoint based on isReplay flag
+        let endpoint = isReplay ? "replay" : "plays"
+        guard var components = URLComponents(string: "\(baseURL)/api/game/\(gameId)/\(endpoint)") else {
             throw GamePlayAPIError.invalidURL
         }
         
@@ -52,6 +54,7 @@ class GamePlayAPI: ObservableObject {
         }
         
         print("Fetching game plays from: \(url.absoluteString)")
+        print("Using \(isReplay ? "replay" : "plays") endpoint for game: \(gameId)")
         
         let (data, response) = try await URLSession.shared.data(from: url)
         
@@ -72,7 +75,30 @@ class GamePlayAPI: ObservableObject {
             let decoder = JSONDecoder()
             let result = try decoder.decode(GamePlayAPIResponse.self, from: data)
             print("Successfully fetched \(result.plays.count) game plays")
-            print("ReplayInfo: GameStatus=\(result.replayInfo.gameStatus), CurrentPlayCount=\(result.replayInfo.currentPlayCount), TotalPlayCount=\(result.replayInfo.totalPlayCount)")
+            
+            // Create default ReplayInfo if not provided (for plays endpoint)
+            let replayInfo = result.replayInfo ?? ReplayInfo(
+                gameStatus: result.plays.isEmpty ? "No Plays Available" : "Live",
+                currentPlayCount: result.plays.count,
+                totalPlayCount: result.plays.count,
+                progressPercentage: result.plays.isEmpty ? 0.0 : 100.0,
+                elapsedSeconds: 0,
+                secondsPerPlay: secondsPerPlay,
+                gameStartTime: startTimeString,
+                currentTime: startTimeString
+            )
+            
+            print("ReplayInfo: GameStatus=\(replayInfo.gameStatus), CurrentPlayCount=\(replayInfo.currentPlayCount), TotalPlayCount=\(replayInfo.totalPlayCount)")
+            
+            // Log drives information
+            if let drives = result.drives, !drives.isEmpty {
+                print("📊 Drives found: \(drives.count)")
+                for drive in drives.prefix(3) {
+                    print("  - Drive \(drive.driveId): \(drive.team) from \(drive.yardLineText), \(drive.numPlays) plays")
+                }
+            } else {
+                print("📊 No drives found in response")
+            }
             
             // Log detailed play information for first play only
             if result.plays.isEmpty {
@@ -102,9 +128,23 @@ class GamePlayAPI: ObservableObject {
                 }
             }
             
-            return result
+            return GamePlayAPIResponse(replayInfo: replayInfo, plays: result.plays, drives: result.drives)
         } catch {
             print("JSON parsing error: \(error)")
+            if let decodingError = error as? DecodingError {
+                switch decodingError {
+                case .keyNotFound(let key, let context):
+                    print("Missing key '\(key)' in \(context.debugDescription)")
+                case .typeMismatch(let type, let context):
+                    print("Type mismatch for type \(type) in \(context.debugDescription)")
+                case .valueNotFound(let type, let context):
+                    print("Value not found for type \(type) in \(context.debugDescription)")
+                case .dataCorrupted(let context):
+                    print("Data corrupted: \(context.debugDescription)")
+                @unknown default:
+                    print("Unknown decoding error")
+                }
+            }
             if let jsonString = String(data: data, encoding: .utf8) {
                 print("Raw response: \(jsonString)")
             }
@@ -116,12 +156,14 @@ class GamePlayAPI: ObservableObject {
 // MARK: - Data Models
 
 struct GamePlayAPIResponse: Codable {
-    let replayInfo: ReplayInfo
+    let replayInfo: ReplayInfo?
     let plays: [GamePlayResponse]
+    let drives: [Drive]? // Handle Drives field
     
     enum CodingKeys: String, CodingKey {
         case replayInfo = "ReplayInfo"
         case plays = "Plays"
+        case drives = "Drives"
     }
 }
 
@@ -155,7 +197,7 @@ struct GamePlayResponse: Codable {
     let playTime: Int
     let periodDisplayString: String
     let ballSpotField: String
-    let driveID: Int
+    let driveID: Int?
     let review: Bool
     let yardsOnPlay: Int
     let continuation: Bool
@@ -182,6 +224,7 @@ struct GamePlayResponse: Codable {
     let playerId1: String?
     let playerId2: String?
     let awayHome: String?
+    let playTypeFlag: String? // New field from your response
     
     enum CodingKeys: String, CodingKey {
         case down = "Down"
@@ -218,6 +261,7 @@ struct GamePlayResponse: Codable {
         case playerId1 = "PlayerId1"
         case playerId2 = "PlayerId2"
         case awayHome = "AwayHome"
+        case playTypeFlag = "PlayTypeFlag"
     }
 }
 
@@ -256,6 +300,42 @@ struct EntitySimilarity: Codable {
 struct Entity: Codable {
     let text: String
     let confidence: Double
+}
+
+struct Drive: Codable {
+    let driveId: Int
+    let startYardLine: Int
+    let totalYards: Int
+    let yardLineText: String
+    let numPlays: Int
+    let startTime: DriveTime
+    let endTime: DriveTime
+    let timeOfDrive: DriveTime
+    let team: String
+    let playIds: [String]
+    
+    enum CodingKeys: String, CodingKey {
+        case driveId = "DriveId"
+        case startYardLine = "StartYardLine"
+        case totalYards = "TotalYards"
+        case yardLineText = "YardLineText"
+        case numPlays = "NumPlays"
+        case startTime = "StartTime"
+        case endTime = "EndTime"
+        case timeOfDrive = "TimeOfDrive"
+        case team = "Team"
+        case playIds = "PlayIds"
+    }
+}
+
+struct DriveTime: Codable {
+    let clock: String
+    let period: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case clock = "Clock"
+        case period = "Period"
+    }
 }
 
 // MARK: - Error Handling
